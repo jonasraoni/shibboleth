@@ -55,6 +55,7 @@ class ShibbolethHandler extends Handler {
 	*/
 	function index($args, $request) {
 		$this->_plugin = $this->_getPlugin();
+		$this->_contextId = $this->_plugin->getCurrentContextId();
 		$this->_shibbolethOptionalTitle = $this->_plugin->getSetting(
 			$this->_contextId,
 		'shibbolethOptionalTitle'
@@ -317,7 +318,6 @@ class ShibbolethHandler extends Handler {
 			$success = Validation::registerUserSession($user, $disabledReason);
 
 			if (!$success) {
-				// @@@ TODO: present user with disabled reason
 				error_log(
 					"Disabled user $uin attempted Shibboleth login" .
 						(is_null($disabledReason) ? "" : ": $disabledReason")
@@ -552,9 +552,9 @@ class ShibbolethHandler extends Handler {
 		$uin = $_SERVER[$uinHeader];
 		$userEmail = $_SERVER[$emailHeader];
 		$userFirstName = $_SERVER[$firstNameHeader];
+		$userLastName = $_SERVER[$lastNameHeader];
 
-
-		if (empty($uin) || empty($userEmail) || empty($userFirstName)) {
+		if (empty($uin) || empty($userEmail) || empty($userFirstName) || empty($userLastName)) {
 			error_log("Shibboleth failed to find required fields for new user");
 		}
 
@@ -562,7 +562,6 @@ class ShibbolethHandler extends Handler {
 		$userInitials = isset($_SERVER[$initialsHeader]) ? $_SERVER[$initialsHeader] : null;
 		$userPhone = isset($_SERVER[$phoneHeader]) ? $_SERVER[$phoneHeader] : null;
 		$userMailing = isset($_SERVER[$mailingHeader]) ? $_SERVER[$mailingHeader] : null;
-		$userLastName = isset($_SERVER[$lastNameHeader]) ? $_SERVER[$lastNameHeader] : null;
 
 		$userDao = DAORegistry::getDAO('UserDAO');
 		$user = $userDao->newDataObject();
@@ -577,10 +576,8 @@ class ShibbolethHandler extends Handler {
 		$sitePrimaryLocale = $site->getPrimaryLocale();
 
 		$user->setGivenName($userFirstName, $sitePrimaryLocale);
+		$user->setFamilyName($userLastName, $sitePrimaryLocale);
 
-		if (!empty($userLastName)) {
-			$user->setFamilyName($userLastName, $sitePrimaryLocale);
-		}
 		if (!empty($userInitials)) {
 			$user->setInitials($userInitials);
 		}
@@ -590,7 +587,6 @@ class ShibbolethHandler extends Handler {
 		if (!empty($userMailing)) {
 			$user->setMailingAddress($userMailing);
 		}
-
 
 		$user->setDateRegistered(Core::getCurrentDate());
 		$user->setPassword(
@@ -628,23 +624,27 @@ class ShibbolethHandler extends Handler {
 	function _shibbolethLoginUrl($request) {
 		$this->_plugin = $this->_getPlugin();
 		$this->_contextId = $this->_plugin->getCurrentContextId();
-		$context = $this->getTargetContext($request);
-		$router = $request->getRouter();
 
 		$wayfUrl = $this->_plugin->getSetting(
 			$this->_contextId,
 			'shibbolethWayfUrl'
 		);
+
+		$router = $request->getRouter();
+		$context = $request->getContext();
+		$contextPath = $context ? $context->getPath() : null;
+
 		$shibLoginUrl = $router->url(
 			$request,
-			null,
+			$contextPath,
 			'shibboleth',
 			'shibLogin',
 			null,
 			null,
 			true
 		);
-		return $wayfUrl . '?target=' . $shibLoginUrl;
+
+		return $wayfUrl . '?target=' . urlencode($shibLoginUrl);
 	}
 
 	function _isShibbolethOptional() {

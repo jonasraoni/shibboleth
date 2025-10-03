@@ -16,7 +16,6 @@
  */
 
 import('lib.pkp.classes.plugins.GenericPlugin');
-define('SHIBBOLETH_PLUGIN_NAME', 'ShibbolethAuthPlugin');
 
 class ShibbolethAuthPlugin extends GenericPlugin {
 	// @@@ TODO: Is there a way to disable delete and upgrade actions
@@ -347,22 +346,57 @@ class ShibbolethAuthPlugin extends GenericPlugin {
 	function _shibbolethLoginUrl($request) {
 		$this->_plugin = $this->_getPlugin();
 		$this->_contextId = $this->_plugin->getCurrentContextId();
-		$router = $request->getRouter();
 
 		$wayfUrl = $this->_plugin->getSetting(
 			$this->_contextId,
 			'shibbolethWayfUrl'
 		);
-		$shibLoginUrl = $router->url(
-			$request,
-			null,
-			'shibboleth',
-			'shibLogin',
-			null,
-			null,
-			true
-		);
-		return $wayfUrl . '?target=' . $shibLoginUrl;
+
+		// FIX: Build proper base URL without current page path
+		$context = $request->getContext();
+		$contextPath = $context ? $context->getPath() : '';
+
+		// Build the complete target URL from scratch
+		$protocol = $request->getProtocol();
+		$host = $request->getServerHost();
+		$baseUrl = $protocol . '://' . $host;
+
+		if ($contextPath) {
+			$target = $baseUrl . '/index.php/' . $contextPath . '/shibboleth/shibLogin';
+		} else {
+			$target = $baseUrl . '/index.php/shibboleth/shibLogin';
+		}
+
+		// DEBUG: Log the values
+		error_log("DEBUG: target = '" . $target . "'");
+
+		// Handle different wayfUrl formats
+		if (preg_match('#^(https?:)?//#i', $wayfUrl)) {
+			$fakeUrl = (strpos($wayfUrl, '//') === 0) ? 'https:' . $wayfUrl : $wayfUrl;
+			$parsed = parse_url($fakeUrl);
+			$hostFromConfig = $parsed['host'] ?? '';
+			$hostFromRequest = $request->getServerHost();
+
+			if (strcasecmp($hostFromConfig, $hostFromRequest) === 0) {
+				$finalUrl = $wayfUrl . '?target=' . urlencode($target);
+				error_log("DEBUG: final URL = '" . $finalUrl . "'");
+				return $finalUrl;
+			} else {
+				return $wayfUrl;
+			}
+		}
+
+		// Handle absolute paths (start with '/')
+		if (strpos($wayfUrl, '/') === 0) {
+			$finalUrl = $wayfUrl . '?target=' . urlencode($target);
+			error_log("DEBUG: final URL = '" . $finalUrl . "'");
+			return $finalUrl;
+		}
+
+		// Handle relative paths
+		$finalUrl = '/' . ltrim($wayfUrl, '/') . '?target=' . urlencode($target);
+		error_log("DEBUG: final URL = '" . $finalUrl . "'");
+		return $finalUrl;
 	}
 
 	function _isShibbolethOptional() {
