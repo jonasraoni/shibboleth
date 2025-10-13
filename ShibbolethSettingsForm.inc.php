@@ -3,8 +3,8 @@
 /**
  * @file plugins/generic/shibboleth/ShibbolethSettingsForm.inc.php
  *
- * Copyright (c) 2014-2023 Simon Fraser University
- * Copyright (c) 2003-2023 John Willinsky
+ * Copyright (c) 2017 Simon Fraser University
+ * Copyright (c) 2017 John Willinsky
  * Distributed under the GNU GPL v3. For full terms see the file docs/COPYING.
  *
  * @class ShibbolethSettingsForm
@@ -19,176 +19,79 @@ import('lib.pkp.classes.form.Form');
 class ShibbolethSettingsForm extends Form {
 
 	/** @var int */
-	var $_contextId;
+	private $_contextId;
 
-	/** @var object */
-	var $_plugin;
+	/** @var ShibbolethAuthPlugin */
+	private $_plugin;
+
+	private const SETTINGS = [
+		'shibbolethWayfUrl' => 'string',
+		'shibbolethHeaderUin' => 'string',
+		'shibbolethHeaderFirstName' => 'string',
+		'shibbolethHeaderLastName' => 'string',
+		'shibbolethHeaderEmail' => 'string',
+		'shibbolethHeaderPhone' => 'string',
+		'shibbolethHeaderMailing' => 'string',
+		'shibbolethAdminUins' => 'string',
+		'shibbolethOptional' => 'bool',
+		'shibbolethOptionalTitle' => 'string',
+		'shibbolethOptionalLoginDescription' => 'string',
+		'shibbolethOptionalRegistrationDescription' => 'string',
+		'shibbolethOptionalButtonLabel' => 'string'
+	];
 
 	/**
 	 * Constructor
-	 * @param $plugin ShibbolethAuthPlugin
-	 * @param $contextId int
 	 */
-	function __construct($plugin, $contextId) {
+	public function __construct(ShibbolethAuthPlugin $plugin, ?int $contextId) {
 		$this->_contextId = $contextId;
 		$this->_plugin = $plugin;
-
 		parent::__construct($plugin->getTemplateResource('settingsForm.tpl'));
-
-		foreach ($this->_plugin->settingsRequired as $setting) {
-			$this->addCheck(
-				new FormValidator(
-					$this,
-					$setting,
-					'required',
-					'plugins.generic.shibboleth.manager.settings.' . $setting . 'Required'
-				)
-			);
-		}
 		$this->addCheck(new FormValidatorPost($this));
 		$this->addCheck(new FormValidatorCSRF($this));
+		foreach (ShibbolethAuthPlugin::REQUIRED_SETTINGS as $setting) {
+			$this->addCheck(new FormValidator($this, $setting, 'required', 'plugins.generic.shibboleth.manager.settings.' . $setting . 'Required'));
+		}
 	}
 
 	/**
-	 * Initialize form data.
+	 * @copydoc Form::initData()
 	 */
-	function initData() {
-		$this->_data = array(
-			'shibbolethWayfUrl' => $this->_plugin->getSetting($this->_contextId, 'shibbolethWayfUrl'),
-			'shibbolethHeaderUin' => $this->_plugin->getSetting($this->_contextId, 'shibbolethHeaderUin'),
-			'shibbolethHeaderFirstName' => $this->_plugin->getSetting($this->_contextId, 'shibbolethHeaderFirstName'),
-			'shibbolethHeaderLastName' => $this->_plugin->getSetting($this->_contextId, 'shibbolethHeaderLastName'),
-			'shibbolethHeaderInitials' => $this->_plugin->getSetting($this->_contextId, 'shibbolethHeaderInitials'),
-			'shibbolethHeaderEmail' => $this->_plugin->getSetting($this->_contextId, 'shibbolethHeaderEmail'),
-			'shibbolethHeaderPhone' => $this->_plugin->getSetting($this->_contextId, 'shibbolethHeaderPhone'),
-			'shibbolethHeaderMailing' => $this->_plugin->getSetting($this->_contextId, 'shibbolethHeaderMailing'),
-			'shibbolethAdminUins' => $this->_plugin->getSetting($this->_contextId, 'shibbolethAdminUins'),
-			'shibbolethOptional' => $this->_plugin->getSetting($this->_contextId, 'shibbolethOptional'),
-			'shibbolethOptionalTitle' => $this->_plugin->getSetting($this->_contextId, 'shibbolethOptionalTitle'),
-			'shibbolethOptionalLoginDescription' => $this->_plugin->getSetting($this->_contextId, 'shibbolethOptionalLoginDescription'),
-			'shibbolethOptionalRegistrationDescription' => $this->_plugin->getSetting($this->_contextId, 'shibbolethOptionalRegistrationDescription'),
-			'shibbolethOptionalButtonLabel' => $this->_plugin->getSetting($this->_contextId, 'shibbolethOptionalButtonLabel'),
-		);
+	public function initData() {
+		foreach (array_keys(static::SETTINGS) as $setting) {
+			$this->setData($setting, $this->_plugin->getSetting($this->_contextId, $setting));
+		}
 	}
 
 	/**
-	 * Assign form data to user-submitted data.
+	 * @copydoc Form::readInputData()
 	 */
-	function readInputData() {
-		$this->readUserVars(array('shibbolethWayfUrl'));
-		$this->readUserVars(array('shibbolethHeaderUin'));
-		$this->readUserVars(array('shibbolethHeaderFirstName'));
-		$this->readUserVars(array('shibbolethHeaderLastName'));
-		$this->readUserVars(array('shibbolethHeaderInitials'));
-		$this->readUserVars(array('shibbolethHeaderEmail'));
-		$this->readUserVars(array('shibbolethHeaderPhone'));
-		$this->readUserVars(array('shibbolethHeaderMailing'));
-		$this->readUserVars(array('shibbolethAdminUins'));
-		$this->readUserVars(array('shibbolethOptional'));
-		$this->readUserVars(array('shibbolethOptionalTitle'));
-		$this->readUserVars(array('shibbolethOptionalLoginDescription'));
-		$this->readUserVars(array('shibbolethOptionalRegistrationDescription'));
-		$this->readUserVars(array('shibbolethOptionalButtonLabel'));
+	public function readInputData() {
+		$this->readUserVars(array_keys(static::SETTINGS));
 	}
 
 	/**
-	 * Fetch the form.
 	 * @copydoc Form::fetch()
 	 */
-	function fetch($request) {
+	public function fetch($request, $template = null, $display = false) {
 		$templateMgr = TemplateManager::getManager($request);
 		$templateMgr->assign('pluginName', $this->_plugin->getName());
-		return parent::fetch($request);
+		return parent::fetch($request, $template, $display);
 	}
 
 	/**
-	 * Save settings.
+	 * @copydoc Form::readInputData()
 	 */
-	function execute(...$functionArgs) {
-		$this->_plugin->updateSetting(
-			$this->_contextId,
-			'shibbolethWayfUrl',
-			trim($this->getData('shibbolethWayfUrl'), "\"\';"),
-			'string'
-		);
-		$this->_plugin->updateSetting(
-			$this->_contextId,
-			'shibbolethHeaderUin',
-			trim($this->getData('shibbolethHeaderUin'), "\"\';"),
-			'string'
-		);
-		$this->_plugin->updateSetting(
-			$this->_contextId,
-			'shibbolethHeaderFirstName',
-			trim($this->getData('shibbolethHeaderFirstName'), "\"\';"),
-			'string'
-		);
-		$this->_plugin->updateSetting(
-			$this->_contextId,
-			'shibbolethHeaderLastName',
-			trim($this->getData('shibbolethHeaderLastName'), "\"\';"),
-			'string'
-		);
-		$this->_plugin->updateSetting(
-			$this->_contextId,
-			'shibbolethHeaderInitials',
-			trim($this->getData('shibbolethHeaderInitials'), "\"\';"),
-			'string'
-		);
-		$this->_plugin->updateSetting(
-			$this->_contextId,
-			'shibbolethHeaderEmail',
-			trim($this->getData('shibbolethHeaderEmail'), "\"\';"),
-			'string'
-		);
-		$this->_plugin->updateSetting(
-			$this->_contextId,
-			'shibbolethHeaderPhone',
-			trim($this->getData('shibbolethHeaderPhone'), "\"\';"),
-			'string'
-		);
-		$this->_plugin->updateSetting(
-			$this->_contextId,
-			'shibbolethHeaderMailing',
-			trim($this->getData('shibbolethHeaderMailing'), "\"\';"),
-			'string'
-		);
-		$this->_plugin->updateSetting(
-			$this->_contextId,
-			'shibbolethAdminUins',
-			trim($this->getData('shibbolethAdminUins'), "\"\';"),
-			'string'
-								);
-		$this->_plugin->updateSetting(
-			$this->_contextId,
-			'shibbolethOptional',
-			$this->getData('shibbolethOptional'),
-			'bool'
-		);
-		$this->_plugin->updateSetting(
-			$this->_contextId,
-			'shibbolethOptionalTitle',
-			$this->getData('shibbolethOptionalTitle'),
-			'string'
-		);
-		$this->_plugin->updateSetting(
-			$this->_contextId,
-			'shibbolethOptionalButtonLabel',
-			$this->getData('shibbolethOptionalButtonLabel'),
-			'string'
-		);
-		$this->_plugin->updateSetting(
-			$this->_contextId,
-			'shibbolethOptionalLoginDescription',
-			$this->getData('shibbolethOptionalLoginDescription'),
-			'string'
-		);
-		$this->_plugin->updateSetting(
-			$this->_contextId,
-			'shibbolethOptionalRegistrationDescription',
-			$this->getData('shibbolethOptionalRegistrationDescription'),
-			'string'
-		);
+	public function execute(...$functionArgs) {
+		foreach (static::SETTINGS as $setting => $type) {
+			$value = $this->getData($setting);
+			if (in_array($setting, ['shibbolethWayfUrl', 'shibbolethHeaderUin', 'shibbolethHeaderFirstName', 'shibbolethHeaderLastName', 'shibbolethHeaderEmail', 'shibbolethHeaderPhone', 'shibbolethHeaderMailing', 'shibbolethAdminUins'])) {
+				$value = trim($value, "\"\';");
+			}
+
+			$this->_plugin->updateSetting($this->_contextId, $setting, $value, $type);
+		}
+
 		return parent::execute(...$functionArgs);
 	}
 }

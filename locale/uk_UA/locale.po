@@ -44,9 +44,6 @@ msgstr "Заголовок з прізвищем користувача Shibbole
 msgid "plugins.generic.shibboleth.manager.settings.shibbolethHeaderLastNameRequired"
 msgstr "Будь ласка, введіть заголовок, в якому міститься прізвище користувача Shibboleth."
 
-msgid "plugins.generic.shibboleth.manager.settings.shibbolethHeaderInitials"
-msgstr "Заголовок з особистими ініціалами користувача Shibboleth"
-
 msgid "plugins.generic.shibboleth.manager.settings.shibbolethHeaderEmail"
 msgstr "Заголовок з електронною адресою користувача Shibboleth"
 

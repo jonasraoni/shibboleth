@@ -44,9 +44,6 @@ msgstr "العبارة التعريفية مع الاسم الأخير، اسم 
 msgid "plugins.generic.shibboleth.manager.settings.shibbolethHeaderLastNameRequired"
 msgstr "لطفاً، أدخل العبارة التعريفية حيث يمكن العثور على الاسم الأخير لخدمة Shibboleth."
 
-msgid "plugins.generic.shibboleth.manager.settings.shibbolethHeaderInitials"
-msgstr "العبارة التعريفية مع الأحرف الأولى لخدمة Shibboleth"
-
 msgid "plugins.generic.shibboleth.manager.settings.shibbolethHeaderEmail"
 msgstr "العبارة التعريفية مع عنوان البريد الالكتروني لخدمة Shibboleth"
 

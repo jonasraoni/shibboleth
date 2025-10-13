@@ -44,9 +44,6 @@ msgstr "Encabezado con el último Shibboleth, familia o apellido"
 msgid "plugins.generic.shibboleth.manager.settings.shibbolethHeaderLastNameRequired"
 msgstr "Por favor, ingrese el encabezado en el que se encuentra el apellido Shibboleth."
 
-msgid "plugins.generic.shibboleth.manager.settings.shibbolethHeaderInitials"
-msgstr "Encabezado con iniciales personales Shibboleth"
-
 msgid "plugins.generic.shibboleth.manager.settings.shibbolethHeaderEmail"
 msgstr "Encabezado con dirección de correo electrónico Shibboleth"
 

@@ -44,9 +44,6 @@ msgstr "HTTP Header ($_SERVER environment variable key) with Shibboleth last, fa
 msgid "plugins.generic.shibboleth.manager.settings.shibbolethHeaderLastNameRequired"
 msgstr "Please enter the header in which the Shibboleth surname is found."
 
-msgid "plugins.generic.shibboleth.manager.settings.shibbolethHeaderInitials"
-msgstr "HTTP Header ($_SERVER environment variable key) with Shibboleth personal initials"
-
 msgid "plugins.generic.shibboleth.manager.settings.shibbolethHeaderEmail"
 msgstr "HTTP Header ($_SERVER environment variable key) with Shibboleth e-mail address"
 

@@ -25,7 +25,6 @@ You must be the site administrator in order to enable or configure this plugin. 
     * Shibboleth UIN
     * first or given name
     * last, family, or surname
-    * personal initials
     * e-mail address
     * telephone number
     * postal mailing address
