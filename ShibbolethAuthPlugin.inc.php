@@ -225,7 +225,7 @@ class ShibbolethAuthPlugin extends GenericPlugin {
 	 */
 	public function registrationAndLoginFilter(string $output, Smarty_Internal_Template $templateMgr, bool $isRegistration): string {
 		$htmlId = $isRegistration ? "register" : "login";
-		if (!preg_match('/<form[^>]+id="' . $htmlId . '"[^>]+>/i', $output, $matches, PREG_OFFSET_CAPTURE)) {
+		if (!preg_match("/<form[^>]+id=\"{$htmlId}\"[^>]+>/i", $output, $matches, PREG_OFFSET_CAPTURE)) {
 			return $output;
 		}
 
@@ -266,7 +266,7 @@ class ShibbolethAuthPlugin extends GenericPlugin {
 		$wayfUrl = $this->getSetting($this->_contextId, 'shibbolethWayfUrl');
 		// FIX: Build proper base URL without current page path
 		$context = $request->getContext();
-		$contextPath = $context ? $context->getPath() . '/' : '';
+		$contextPath = ($context ? $context->getPath() : 'index') . '/';
 		// Build the complete target URL from scratch
 		$protocol = $request->getProtocol();
 		$host = $request->getServerHost();

@@ -1,4 +1,4 @@
-<div>	
+<div>
 	<h2>
 		{if trim($shibbolethTitle) != ""}
 			{if $isRegistration}

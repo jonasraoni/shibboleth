@@ -217,7 +217,7 @@ class ShibbolethHandler extends Handler {
 	 * Login handler; receives post-validation Shibboleth redirect.
 	 */
 	public function login(?array $args, Request $request): void {
-		$user = $this->_getUserFromShibboleth();
+		$user = $this->_getUserFromShibboleth($isNewUser);
 		if (!$user) {
 			$this->_logout();
 		}
@@ -228,6 +228,12 @@ class ShibbolethHandler extends Handler {
 		if (!$success) {
 			error_log("Disabled user " . $user->getAuthStr() . " attempted Shibboleth login" . ($disabledReason ? ": $disabledReason" : ""));
 			$this->_logout();
+		}
+
+		// Sends the user to the profile page after registration to select its roles
+		if ($isNewUser) {
+			$context = $request->getContext();
+			$request->redirect($context ? $context->getPath() : 'index', 'user', 'profile', null, null, 'roles');
 		}
 
 		$this->_redirectAfterLogin($request);
@@ -332,13 +338,13 @@ class ShibbolethHandler extends Handler {
 		if ($adminFound !== false) {
 			// and if they are not already an admin
 			if (!$userGroupDao->userInGroup($userId, $adminId)) {
-				error_log("Shibboleth assigning admin to $uin");
+				error_log("Shibboleth assigning admin to {$uin}");
 				$userGroupDao->assignUserToGroup($userId, $adminId);
 			}
 		} else {
 			// If they are not in the admin list - then be sure they
 			// are not an admin in the role table
-			error_log("Removing admin for $uin");
+			error_log("Removing admin for {$uin}");
 			$userGroupDao->removeUserFromGroup($userId, $adminId, 0);
 		}
 	}
@@ -363,13 +369,13 @@ class ShibbolethHandler extends Handler {
 	/**
 	 * Create a new user from the Shibboleth-provided information
 	 */
-	private function _getUserFromShibboleth(): ?User {
+	private function _getUserFromShibboleth(?bool &$isNewUser = null): ?User {
 		$uin = $this->_getShibbolethSetting('shibbolethHeaderUin');
 		$userEmail = $this->_getShibbolethSetting('shibbolethHeaderEmail');
 
 		// We rely on these headers being present.
 		if ($uin === null || $userEmail === null) {
-			error_log("Shibboleth plugin enabled, but not properly configured; the $uin and $userEmail are required");
+			error_log("Shibboleth plugin enabled, but not properly configured; the {$uin} and {$userEmail} are required");
 			return null;
 		}
 
@@ -383,7 +389,7 @@ class ShibbolethHandler extends Handler {
 				$user->setAuthStr($uin);
 				$userDao->updateObject($user);
 			} elseif ($user->getAuthStr() !== $uin) {
-				error_log("Shibboleth user with email $userEmail already has a different UIN");
+				error_log("Shibboleth user with email {$userEmail} already has a different UIN");
 				return null;
 			}
 			return $user;
@@ -422,7 +428,8 @@ class ShibbolethHandler extends Handler {
 		$user->setDateRegistered(Core::getCurrentDate());
 		$user->setPassword(Validation::encryptCredentials(Validation::generatePassword(40), Validation::generatePassword(40)));
 		$userDao->insertObject($user);
-		error_log("Shibboleth failed to find a user with UIN $uin or the email $userEmail, a new user was created");
+		$isNewUser = true;
+		error_log("Shibboleth failed to find a user with UIN {$uin} or the email {$userEmail}, a new user was created");
 		return $user;
 	}
 
